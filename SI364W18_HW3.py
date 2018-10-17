@@ -50,10 +50,24 @@ db = SQLAlchemy(app) # For database use
 ## -- id (Integer, Primary Key)
 ## -- text (String, up to 280 chars)
 ## -- user_id (Integer, ID of user posted -- ForeignKey)
-
 ## Should have a __repr__ method that returns strings of a format like:
 #### {Tweet text...} (ID: {tweet id})
 
+class Tweet(db.Model):
+    __tablename__ = 'Tweets'
+    TweetId = db.Column(db.Integer, primary_key=True)
+    TweetText = db.Column(db.String(280))
+    UserId = db.Column(db.Integer, db.ForeignKey('Users.UserId'))
+
+    def __repr__(self):
+
+class User(db.Model):
+    __tablename__ = 'Users'
+    UserId = db.Column(db.Integer, primary_key=True)
+    Username = db.Column(db.String(64), unique=True)
+    DisplayName = db.Column(db.String(124))
+
+    def __repr__(self):
 
 # - User
 ## -- id (Integer, Primary Key)
