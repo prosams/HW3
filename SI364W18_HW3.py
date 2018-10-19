@@ -19,7 +19,7 @@ app.config['SECRET_KEY'] = 'hard to guess string from si364'
 ## TODO 364: Create a database in postgresql in the code line below, and fill in your app's database URI. It should be of the format: postgresql://localhost/YOUR_DATABASE_NAME
 
 ## Your final Postgres database should be your uniqname, plus HW3, e.g. "jczettaHW3" or "maupandeHW3"
-app.config["SQLALCHEMY_DATABASE_URI"] = "postgres://ulmasHW3@localhost/ulmasHW3"
+app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://localhost/ulmasHW3"
 ## Provided:
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -46,38 +46,26 @@ db = SQLAlchemy(app) # For database use
 ## The following relationships should exist between them:
 # Tweet:User - Many:One
 
-# - Tweet
-## -- id (Integer, Primary Key)
-## -- text (String, up to 280 chars)
-## -- user_id (Integer, ID of user posted -- ForeignKey)
-## Should have a __repr__ method that returns strings of a format like:
-#### {Tweet text...} (ID: {tweet id})
-
 class Tweet(db.Model):
     __tablename__ = 'Tweets'
-    TweetId = db.Column(db.Integer, primary_key=True)
-    TweetText = db.Column(db.String(280))
-    UserId = db.Column(db.Integer, db.ForeignKey('Users.UserId'))
+    TweetId = db.Column(db.Integer, primary_key=True)               ## -- id (Integer, Primary Key)
+    TweetText = db.Column(db.String(280))                           ## -- text (String, up to 280 chars)
+    UserId = db.Column(db.Integer, db.ForeignKey('Users.UserId'))   ## -- user_id (Integer, ID of user posted -- ForeignKey)
 
-    def __repr__(self):
+    def __repr__(self):    #### {Tweet text...} (ID: {tweet id})
+        return '%s (ID: %d)' % (self.TweetText, self.TweetId)
 
 class User(db.Model):
     __tablename__ = 'Users'
-    UserId = db.Column(db.Integer, primary_key=True)
-    Username = db.Column(db.String(64), unique=True)
-    DisplayName = db.Column(db.String(124))
+    UserId = db.Column(db.Integer, primary_key=True)     ## -- id (Integer, Primary Key)
+    Username = db.Column(db.String(64), unique=True)     ## -- username (String, up to 64 chars, Unique=True)
+    DisplayName = db.Column(db.String(124))              ## -- display_name (String, up to 124 chars)
+    tweets =  db.relationship('Tweet', backref='User')
+    ## ---- Line to indicate relationship between Tweet and User tables (the 1 user: many tweets relationship)
+    #### ^^^ How to do this???
 
-    def __repr__(self):
-
-# - User
-## -- id (Integer, Primary Key)
-## -- username (String, up to 64 chars, Unique=True)
-## -- display_name (String, up to 124 chars)
-## ---- Line to indicate relationship between Tweet and User tables (the 1 user: many tweets relationship)
-
-## Should have a __repr__ method that returns strings of a format like:
-#### {username} | ID: {id}
-
+    def __repr__(self):      #### {username} | ID: {id}
+        return '%s | ID: %d' % (self.Username, self.UserId)
 
 ########################
 ##### Set up Forms #####
@@ -85,18 +73,27 @@ class User(db.Model):
 
 # TODO 364: Fill in the rest of the below Form class so that someone running this web app will be able to fill in information about tweets they wish existed to save in the database:
 
-## -- text: tweet text (Required, should not be more than 280 characters)
+class MyForm(FlaskForm):
+    text = StringField('Tweet text!', validators=[Required(), Length(min=0,  max=280)])   ## -- text: tweet text (Required, should not be more than 280 characters)
+    username = StringField('Twitter username of who should post', validators=[Required(), Length(min=0,  max=64)])
+    display_name = StringField('Display name of the user', )
+
+    # def customValidate1(self):
+    #     if self[0] == "@": # the twitter username may NOT start with an "@" symbol (the template will put that in where it should appear)
+    #         return "Make sure you don't have @ as the first character in the username!"
+    #
+    # def customValidate2(self):
+    #     if self.split() <  2: #the display name MUST be at least 2 words (this is a useful technique to practice, even though this is not true of everyone's actual full name!)
+    #         return "Make sure the display name is at least 2 words!"
+
+
 ## -- username: the twitter username who should post it (Required, should not be more than 64 characters)
 ## -- display_name: the display name of the twitter user with that username (Required, + set up custom validation for this -- see below)
-
 # HINT: Check out index.html where the form will be rendered to decide what field names to use in the form class definition
 
-# TODO 364: Set up custom validation for this form such that:
-# - the twitter username may NOT start with an "@" symbol (the template will put that in where it should appear)
-# - the display name MUST be at least 2 words (this is a useful technique to practice, even though this is not true of everyone's actual full name!)
+# TODO 364: Set up custom validation for this form
 
 # TODO 364: Make sure to check out the sample application linked in the readme to check if yours is like it!
-
 
 ###################################
 ##### Routes & view functions #####
@@ -132,6 +129,9 @@ def internal_server_error(e):
 @app.route('/', methods=['GET', 'POST'])
 def index():
     # Initialize the form
+    form = MyForm(request.form)
+    if form.validate_on_submit():
+        
 
     # Get the number of Tweets
 
