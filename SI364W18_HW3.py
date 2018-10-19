@@ -125,14 +125,15 @@ def internal_server_error(e):
 
 # NOTE: The index route should:
 # - Show the Tweet form.
-# - If you enter a tweet with identical text and username to an existing tweet, it should redirect you to the list of all the tweets and a message that you've already saved a tweet like that.
+# - If you enter a tweet with identical text and username to an existing tweet, it should
+# redirect you to the list of all the tweets and a message that you've already saved a tweet like that.
 # - If the Tweet form is entered and validates properly, the data from the form should be saved properly to the database, and the user should see the form again with a message flashed: "Tweet successfully saved!"
 # Try it out in the sample app to check against yours!
 
-@app.route('/index', methods=['GET', 'POST'])
+@app.route('/', methods=['GET', 'POST'])
 def index():
     form = MyForm()
-    tweets = MyForm.query.all() # Initialize the form
+    tweets = Tweet.query.all() # Initialize the form
     num_tweets = len(tweets)    # Get the number of Tweets
     if form.validate_on_submit():
         textform = form.text.data
@@ -140,22 +141,28 @@ def index():
 
         print(textform)
         print(username)
-        if db.session.query(Users).filter_by(Username=username).first():    ## Find out if there's already a user with the entered username
-            user = db.session.query(Users).filter_by(Username=username).first()     ## If there is, save it in a variable: user
+        if db.session.query(User).filter_by(Username=username).first():    ## Find out if there's already a user with the entered username
+            user = db.session.query(User).filter_by(Username=username).first()     ## If there is, save it in a variable: user
         else:    ## Or if there is not, then create one and add it to the database
             new = User(Username = username)
             db.session.add(new)
             db.session.commit()
 
         try:
-            trying = db.session.query(Tweets).filter_by(TweetText=textform, UserId = userid).first()
+            trying = db.session.query(Tweet).filter_by(TweetText=textform, UserId = userid).first()
+            print(trying)
+            print("first checkpoint")
             if trying:                                                              # If there already exists a tweet in the database with this text and this user id
                 flash("This tweet already exists in the database!")                 # Then flash a message about the tweet already existing
                 return redirect(url_for("see_all_tweets"))                          ## And redirect to the list of all tweets
+                print("it has gotten here")
             else:
-                newtweet = Tweet( TweetText=textform, UserId=userid)                ## Create a new tweet object with the text and user id
+                newtweet = Tweet(TweetText=textform, UserId=userid)                ## Create a new tweet object with the text and user id
+                print(newtweet)
+                print("ok this is in the else thing")
                 db.session.add(newtweet)                                            ## And add it to the database
                 db.session.commit()
+                print("now we have finished commit")
                 flash("This tweet has been successfully added.")                    ## Flash a message about a tweet being successfully added
                 return redirect(url_for("index"))           ## Redirect to the index page
         except:
@@ -169,12 +176,13 @@ def index():
 
 @app.route('/all_tweets')
 def see_all_tweets(): # LIKE THE MOVIES AND MOVIE DIRECTOR THING #####################
-    tweets = Tweet.query.all()
-    tweets_users = []
-    for t in tweets:
-        user = User.query.filter_by(id=t.user_id).first()
-        movies_directors.append((m, direct))
-    pass # Replace with code
+    # tweets = Tweet.query.all()
+    # tweets_users = []
+    # for t in tweets:
+    #     user = User.query.filter_by(id=t.user_id).first()
+    #     movies_directors.append((m, direct))
+
+    return "You need to write a function here! ! !!"
     # TODO 364: Fill in this view function so that it can successfully render the template all_tweets.html, which is provided.
     # HINT: Careful about what type the templating in all_tweets.html is expecting! It's a list of... not lists, but...
     # HINT #2: You'll have to make a query for the tweet and, based on that, another query for the username that goes with it...
@@ -186,13 +194,13 @@ def see_all_users():
     pass # Replace with code
     # TODO 364: Fill in this view function so it can successfully render the template all_users.html, which is provided.
 
-# TODO 364
-# Create another route (no scaffolding provided) at /longest_tweet with a view function get_longest_tweet (see details below for what it should do)
-# TODO 364
-# Create a template to accompany it called longest_tweet.html that extends from base.html.
+# TODO 364: Create another route (no scaffolding provided) at /longest_tweet with a view function get_longest_tweet (see details below for what it should do)
+# NOTE:This view function should compute and render a template (as shown in the sample application) that shows the text of the tweet currently saved in the database which has the most NON-WHITESPACE characters in it, and the username AND display name of the user that it belongs to.
+@app.route('/longest_tweet')
+def get_longest_tweet():
+    pass # Replace with code
+# TODO 364: Create a template to accompany it called longest_tweet.html that extends from base.html.
 
-# NOTE:
-# This view function should compute and render a template (as shown in the sample application) that shows the text of the tweet currently saved in the database which has the most NON-WHITESPACE characters in it, and the username AND display name of the user that it belongs to.
 # NOTE: This is different (or could be different) from the tweet with the most characters including whitespace!
 # Any ties should be broken alphabetically (alphabetically by text of the tweet). HINT: Check out the chapter in the Python reference textbook on stable sorting.
 # Check out /longest_tweet in the sample application for an example.
