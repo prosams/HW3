@@ -1,6 +1,8 @@
 ## SI 364 - Winter 2018
 ## HW 3
 
+# one of the sources I consulted was http://flask.pocoo.org/snippets/64/
+
 ####################
 ## Import statements
 ####################
@@ -28,7 +30,6 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 ### App setup ####
 ##################
 db = SQLAlchemy(app) # For database use
-
 
 #########################
 #########################
@@ -75,24 +76,26 @@ class User(db.Model):
 
 class MyForm(FlaskForm):
     text = StringField('Tweet text!', validators=[Required(), Length(min=0,  max=280)])   ## -- text: tweet text (Required, should not be more than 280 characters)
-    username = StringField('Twitter username of who should post', validators=[Required(), Length(min=0,  max=64)])
-    display_name = StringField('Display name of the user', )
+    username = StringField('Twitter username of who should post', validators=[Required(), Length(min=0,  max=64)])  ## -- username: the twitter username who should post it (Required, should not be more than 64 characters)
+    display_name = StringField('Display name of the user', )    ## -- display_name: the display name of the twitter user with that username (Required, + set up custom validation for this -- see below)
+    submit = SubmitField('Submit')
 
-    # def customValidate1(self):
-    #     if self[0] == "@": # the twitter username may NOT start with an "@" symbol (the template will put that in where it should appear)
-    #         return "Make sure you don't have @ as the first character in the username!"
-    #
-    # def customValidate2(self):
-    #     if self.split() <  2: #the display name MUST be at least 2 words (this is a useful technique to practice, even though this is not true of everyone's actual full name!)
-    #         return "Make sure the display name is at least 2 words!"
+    def customValidate1(self): # TODO 364: Set up custom validation for this form
+        username = self.username.data
+        if username[0] == "@": # the twitter username may NOT start with an "@" symbol (the template will put that in where it should appear)
+            return False
+        elif username[0] != "@":
+            return True
 
+    def customValidate2(self): # TODO 364: Set up custom validation for this form
+        displaydat = self.display_name.data
+        splitcheck = displaydat.split(" ")
+        if splitcheck <  2: #the display name MUST be at least 2 words (this is a useful technique to practice, even though this is not true of everyone's actual full name!)
+            return False
+        elif splitcheck >= 2:
+            return True
 
-## -- username: the twitter username who should post it (Required, should not be more than 64 characters)
-## -- display_name: the display name of the twitter user with that username (Required, + set up custom validation for this -- see below)
 # HINT: Check out index.html where the form will be rendered to decide what field names to use in the form class definition
-
-# TODO 364: Set up custom validation for this form
-
 # TODO 364: Make sure to check out the sample application linked in the readme to check if yours is like it!
 
 ###################################
@@ -134,30 +137,35 @@ def index():
     if form.validate_on_submit():
         textform = form.text.data
         username = form.username.data       ## Get the data from the form
+
         print(textform)
         print(username)
-        if db.session.query(User).filter_by(Username=username).first():    ## Find out if there's already a user with the entered username
-            user = db.session.query(User).filter_by(Username=username).first()     ## If there is, save it in a variable: user
+        if db.session.query(Users).filter_by(Username=username).first():    ## Find out if there's already a user with the entered username
+            user = db.session.query(Users).filter_by(Username=username).first()     ## If there is, save it in a variable: user
         else:    ## Or if there is not, then create one and add it to the database
             new = User(Username = username)
             db.session.add(new)
             db.session.commit()
-    # If the form was posted to this route,
 
-    ## If there already exists a tweet in the database with this text and this user id (the id of that user variable above...) ## Then flash a message about the tweet already existing
-    ## And redirect to the list of all tweets
-
-    ## Assuming we got past that redirect,
-    ## Create a new tweet object with the text and user id
-    ## And add it to the database
-    ## Flash a message about a tweet being successfully added
-    ## Redirect to the index page
+        try:
+            trying = db.session.query(Tweets).filter_by(TweetText=textform, UserId = userid).first()
+            if trying:                                                              # If there already exists a tweet in the database with this text and this user id
+                flash("This tweet already exists in the database!")                 # Then flash a message about the tweet already existing
+                return redirect(url_for("see_all_tweets"))                          ## And redirect to the list of all tweets
+            else:
+                newtweet = Tweet( TweetText=textform, UserId=userid)                ## Create a new tweet object with the text and user id
+                db.session.add(newtweet)                                            ## And add it to the database
+                db.session.commit()
+                flash("This tweet has been successfully added.")                    ## Flash a message about a tweet being successfully added
+                return redirect(url_for("index"))           ## Redirect to the index page
+        except:
+            return "Something is going wrong with checking if a tweet already exists in the database"
 
     # PROVIDED: If the form did NOT validate / was not submitted
     errors = [v for v in form.errors.values()]
     if len(errors) > 0:
         flash("!!!! ERRORS IN FORM SUBMISSION - " + str(errors))
-    return render_template('index.html',) # TODO 364: Add more arguments to the render_template invocation to send data to index.html
+    return render_template('index.html', form=form, num_tweets=num_tweets) # TODO 364: Add more arguments to the render_template invocation to send data to index.html
 
 @app.route('/all_tweets')
 def see_all_tweets(): # LIKE THE MOVIES AND MOVIE DIRECTOR THING #####################
