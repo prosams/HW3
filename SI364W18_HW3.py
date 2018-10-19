@@ -126,21 +126,23 @@ def internal_server_error(e):
 # - If the Tweet form is entered and validates properly, the data from the form should be saved properly to the database, and the user should see the form again with a message flashed: "Tweet successfully saved!"
 # Try it out in the sample app to check against yours!
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/index', methods=['GET', 'POST'])
 def index():
-    # Initialize the form
-    form = MyForm(request.form)
+    form = MyForm()
+    tweets = MyForm.query.all() # Initialize the form
+    num_tweets = len(tweets)    # Get the number of Tweets
     if form.validate_on_submit():
-        
-
-    # Get the number of Tweets
-
+        textform = form.text.data
+        username = form.username.data       ## Get the data from the form
+        print(textform)
+        print(username)
+        if db.session.query(User).filter_by(Username=username).first():    ## Find out if there's already a user with the entered username
+            user = db.session.query(User).filter_by(Username=username).first()     ## If there is, save it in a variable: user
+        else:    ## Or if there is not, then create one and add it to the database
+            new = User(Username = username)
+            db.session.add(new)
+            db.session.commit()
     # If the form was posted to this route,
-    ## Get the data from the form
-
-    ## Find out if there's already a user with the entered username
-    ## If there is, save it in a variable: user
-    ## Or if there is not, then create one and add it to the database
 
     ## If there already exists a tweet in the database with this text and this user id (the id of that user variable above...) ## Then flash a message about the tweet already existing
     ## And redirect to the list of all tweets
@@ -158,15 +160,21 @@ def index():
     return render_template('index.html',) # TODO 364: Add more arguments to the render_template invocation to send data to index.html
 
 @app.route('/all_tweets')
-def see_all_tweets():
+def see_all_tweets(): # LIKE THE MOVIES AND MOVIE DIRECTOR THING #####################
+    tweets = Tweet.query.all()
+    tweets_users = []
+    for t in tweets:
+        user = User.query.filter_by(id=t.user_id).first()
+        movies_directors.append((m, direct))
     pass # Replace with code
     # TODO 364: Fill in this view function so that it can successfully render the template all_tweets.html, which is provided.
     # HINT: Careful about what type the templating in all_tweets.html is expecting! It's a list of... not lists, but...
     # HINT #2: You'll have to make a query for the tweet and, based on that, another query for the username that goes with it...
 
-
 @app.route('/all_users')
 def see_all_users():
+    # users = User.query.all()
+    # much simpler than all tweets
     pass # Replace with code
     # TODO 364: Fill in this view function so it can successfully render the template all_users.html, which is provided.
 
@@ -180,6 +188,9 @@ def see_all_users():
 # NOTE: This is different (or could be different) from the tweet with the most characters including whitespace!
 # Any ties should be broken alphabetically (alphabetically by text of the tweet). HINT: Check out the chapter in the Python reference textbook on stable sorting.
 # Check out /longest_tweet in the sample application for an example.
+# could pull all tweets and length tweet....
+# could look at other query filters... there are some sorting methods
+# could sort by text length itself! — LOOK AT LECTURE 5! import func and filter by a lentgth/sort
 
 # HINT 2: The chapters in the Python reference textbook on:
 ## - Dictionary accumulation, the max value pattern
