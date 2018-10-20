@@ -59,14 +59,14 @@ class Tweet(db.Model):
 class User(db.Model):
     __tablename__ = 'Users'
     UserId = db.Column(db.Integer, primary_key=True)     ## -- id (Integer, Primary Key)
-    Username = db.Column(db.String(64), unique=True)     ## -- username (String, up to 64 chars, Unique=True)
-    DisplayName = db.Column(db.String(124))              ## -- display_name (String, up to 124 chars)
+    username = db.Column(db.String(64), unique=True)     ## -- username (String, up to 64 chars, Unique=True)
+    display_name = db.Column(db.String(124))              ## -- display_name (String, up to 124 chars)
     tweets =  db.relationship('Tweet', backref='User')
     ## ---- Line to indicate relationship between Tweet and User tables (the 1 user: many tweets relationship)
     #### ^^^ How to do this???
 
     def __repr__(self):      #### {username} | ID: {id}
-        return '%s | ID: %s' % (self.Username, self.UserId)
+        return '%s | ID: %s' % (self.username, self.UserId)
 
 ########################
 ##### Set up Forms #####
@@ -143,18 +143,11 @@ def index():
         display = form.display_name.data
         user = ""
 
-        # if db.session.query(User).filter_by(Username=username).first():    ## Find out if there's already a user with the entered username
-        #     user = db.session.query(User).filter_by(Username=username).first()     ## If there is, save it in a variable: user
-        # else:    ## Or if there is not, then create one and add it to the database
-        #     new = User(Username = username, DisplayName = display)
-        #     db.session.add(new)
-        #     db.session.commit()
-
-        ok = db.session.query(User).filter_by(Username=username).first()
+        ok = db.session.query(User).filter_by(username=username).first()
         if ok:
-            user = db.session.query(User).filter_by(Username=username).first()
+            user = db.session.query(User).filter_by(username=username).first()
         if not ok:
-            user = User(Username = username, DisplayName = display)
+            user = User(username = username, display_name = display)
             db.session.add(user)
             db.session.commit()
 
@@ -172,26 +165,6 @@ def index():
             flash("This tweet has been successfully added.")                    ## Flash a message about a tweet being successfully added
             return redirect(url_for("index"))
 
-        # try:
-        #     trying = db.session.query(Tweet).filter_by(TweetText=textform, UserId = user.id).first()
-        #     print(trying)
-        #     print("first checkpoint")
-        #     if trying:                                                              # If there already exists a tweet in the database with this text and this user id
-        #         flash("This tweet already exists in the database!")                 # Then flash a message about the tweet already existing
-        #         return redirect(url_for("see_all_tweets"))                          ## And redirect to the list of all tweets
-        #         print("it has gotten here")
-        #     else:
-        #         newtweet = Tweet(TweetText=textform, UserId=user.id)                ## Create a new tweet object with the text and user id
-        #         print(newtweet)
-        #         print("ok this is in the else thing")
-        #         db.session.add(newtweet)                                            ## And add it to the database
-        #         db.session.commit()
-        #         print("now we have finished commit")
-        #         flash("This tweet has been successfully added.")                    ## Flash a message about a tweet being successfully added
-        #         return redirect(url_for("index"))           ## Redirect to the index page
-        # except:
-        #     return "Something is going wrong with checking if a tweet already exists in the database"
-
     # PROVIDED: If the form did NOT validate / was not submitted
     errors = [v for v in form.errors.values()]
     if len(errors) > 0:
@@ -205,7 +178,7 @@ def see_all_tweets(): # LIKE THE MOVIES AND MOVIE DIRECTOR THING ###############
     for t in tweets:
         tweet = Tweet.query.filter_by(UserId=t.UserId).first() # HINT #2: You'll have to make a query for the tweet and
         user = User.query.filter_by(UserId=tweet.UserId).first()
-        tweetlist.append((tweet.TweetText, user.Username))
+        tweetlist.append((tweet.TweetText, user.username))
     return render_template('all_tweets.html', all_tweets=tweetlist)
 
     # TODO 364: Fill in this view function so that it can successfully render the template all_tweets.html, which is provided.
@@ -214,13 +187,12 @@ def see_all_tweets(): # LIKE THE MOVIES AND MOVIE DIRECTOR THING ###############
 
 @app.route('/all_users')
 def see_all_users():
-    # bigusers = User.query.all()
-    # users = []
-    # for x in bigusers:
-    #     user = User.query.filter_by(id=t.UserId).first()
-    # # much simpler than all tweets
-    pass # Replace with code
-    # TODO 364: Fill in this view function so it can successfully render the template all_users.html, which is provided.
+    bigusers = User.query.all()
+    print(bigusers)
+    return render_template('all_users.html', users=bigusers)
+
+    # TODO 364: Fill in this view function so it can successfully
+    # render the template all_users.html, which is provided.
 
 # TODO 364: Create another route (no scaffolding provided) at /longest_tweet with a view function get_longest_tweet (see details below for what it should do)
 # NOTE:This view function should compute and render a template (as shown in the sample application) that shows the text of the tweet currently saved in the database which has the most NON-WHITESPACE characters in it, and the username AND display name of the user that it belongs to.
