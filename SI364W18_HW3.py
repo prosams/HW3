@@ -54,7 +54,7 @@ class Tweet(db.Model):
     UserId = db.Column(db.Integer, db.ForeignKey('Users.UserId'))   ## -- user_id (Integer, ID of user posted -- ForeignKey)
 
     def __repr__(self):    #### {Tweet text...} (ID: {tweet id})
-        return '%s (ID: %d)' % (self.TweetText, self.TweetId)
+        return '%s (ID: %s)' % (self.TweetText, self.TweetId)
 
 class User(db.Model):
     __tablename__ = 'Users'
@@ -66,7 +66,7 @@ class User(db.Model):
     #### ^^^ How to do this???
 
     def __repr__(self):      #### {username} | ID: {id}
-        return '%s | ID: %d' % (self.Username, self.UserId)
+        return '%s | ID: %s' % (self.Username, self.UserId)
 
 ########################
 ##### Set up Forms #####
@@ -138,35 +138,58 @@ def index():
     if form.validate_on_submit():
         textform = form.text.data
         username = form.username.data       ## Get the data from the form
+        display = form.display_name.data
+        user = ""
+        
+        # if db.session.query(User).filter_by(Username=username).first():    ## Find out if there's already a user with the entered username
+        #     user = db.session.query(User).filter_by(Username=username).first()     ## If there is, save it in a variable: user
+        # else:    ## Or if there is not, then create one and add it to the database
+        #     new = User(Username = username, DisplayName = display)
+        #     db.session.add(new)
+        #     db.session.commit()
 
-        print(textform)
-        print(username)
-        if db.session.query(User).filter_by(Username=username).first():    ## Find out if there's already a user with the entered username
-            user = db.session.query(User).filter_by(Username=username).first()     ## If there is, save it in a variable: user
-        else:    ## Or if there is not, then create one and add it to the database
-            new = User(Username = username)
-            db.session.add(new)
+        user = db.session.query(User).filter_by(Username=username).first()
+        print(user)
+        if not user:
+            user = User(Username = username, DisplayName = display)
+            db.session.add(user)
             db.session.commit()
 
-        try:
-            trying = db.session.query(Tweet).filter_by(TweetText=textform, UserId = userid).first()
-            print(trying)
-            print("first checkpoint")
-            if trying:                                                              # If there already exists a tweet in the database with this text and this user id
-                flash("This tweet already exists in the database!")                 # Then flash a message about the tweet already existing
-                return redirect(url_for("see_all_tweets"))                          ## And redirect to the list of all tweets
-                print("it has gotten here")
-            else:
-                newtweet = Tweet(TweetText=textform, UserId=userid)                ## Create a new tweet object with the text and user id
-                print(newtweet)
-                print("ok this is in the else thing")
-                db.session.add(newtweet)                                            ## And add it to the database
-                db.session.commit()
-                print("now we have finished commit")
-                flash("This tweet has been successfully added.")                    ## Flash a message about a tweet being successfully added
-                return redirect(url_for("index"))           ## Redirect to the index page
-        except:
-            return "Something is going wrong with checking if a tweet already exists in the database"
+        trying = db.session.query(Tweet).filter_by(TweetText=textform, UserId = user.UserId).first()
+        if trying:
+            flash("This tweet already exists in the database!")                 # Then flash a message about the tweet already existing
+            return redirect(url_for("see_all_tweets"))                          ## And redirect to the list of all tweets
+            print("it has gotten here")
+
+        if not trying:
+            newtweet = Tweet(TweetText=textform, UserId=user.UserId)                ## Create a new tweet object with the text and user id
+            print(newtweet)
+            print("ok this is in the else thing")
+            db.session.add(newtweet)                                            ## And add it to the database
+            db.session.commit()
+            print("now we have finished commit")
+            flash("This tweet has been successfully added.")                    ## Flash a message about a tweet being successfully added
+            return redirect(url_for("index"))
+
+        # try:
+        #     trying = db.session.query(Tweet).filter_by(TweetText=textform, UserId = user.id).first()
+        #     print(trying)
+        #     print("first checkpoint")
+        #     if trying:                                                              # If there already exists a tweet in the database with this text and this user id
+        #         flash("This tweet already exists in the database!")                 # Then flash a message about the tweet already existing
+        #         return redirect(url_for("see_all_tweets"))                          ## And redirect to the list of all tweets
+        #         print("it has gotten here")
+        #     else:
+        #         newtweet = Tweet(TweetText=textform, UserId=user.id)                ## Create a new tweet object with the text and user id
+        #         print(newtweet)
+        #         print("ok this is in the else thing")
+        #         db.session.add(newtweet)                                            ## And add it to the database
+        #         db.session.commit()
+        #         print("now we have finished commit")
+        #         flash("This tweet has been successfully added.")                    ## Flash a message about a tweet being successfully added
+        #         return redirect(url_for("index"))           ## Redirect to the index page
+        # except:
+        #     return "Something is going wrong with checking if a tweet already exists in the database"
 
     # PROVIDED: If the form did NOT validate / was not submitted
     errors = [v for v in form.errors.values()]
