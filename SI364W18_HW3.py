@@ -83,16 +83,18 @@ class MyForm(FlaskForm):
     def customValidate1(self): # TODO 364: Set up custom validation for this form
         username = self.username.data
         if username[0] == "@": # the twitter username may NOT start with an "@" symbol (the template will put that in where it should appear)
-            return False
+            raise ValidationError("Your twitter username can't start with @!!!!")
         elif username[0] != "@":
             return True
 
     def customValidate2(self): # TODO 364: Set up custom validation for this form
         displaydat = self.display_name.data
+        print(displaydat)
         splitcheck = displaydat.split(" ")
-        if splitcheck <  2: #the display name MUST be at least 2 words (this is a useful technique to practice, even though this is not true of everyone's actual full name!)
-            return False
-        elif splitcheck >= 2:
+        print(splitcheck)
+        if len(splitcheck) <  2: #the display name MUST be at least 2 words (this is a useful technique to practice, even though this is not true of everyone's actual full name!)
+            raise ValidationError("Your  display name must be at least  2 words! ! !!  ")
+        elif len(splitcheck) >= 2:
             return True
 
 # HINT: Check out index.html where the form will be rendered to decide what field names to use in the form class definition
@@ -140,7 +142,7 @@ def index():
         username = form.username.data       ## Get the data from the form
         display = form.display_name.data
         user = ""
-        
+
         # if db.session.query(User).filter_by(Username=username).first():    ## Find out if there's already a user with the entered username
         #     user = db.session.query(User).filter_by(Username=username).first()     ## If there is, save it in a variable: user
         # else:    ## Or if there is not, then create one and add it to the database
@@ -148,9 +150,10 @@ def index():
         #     db.session.add(new)
         #     db.session.commit()
 
-        user = db.session.query(User).filter_by(Username=username).first()
-        print(user)
-        if not user:
+        ok = db.session.query(User).filter_by(Username=username).first()
+        if ok:
+            user = db.session.query(User).filter_by(Username=username).first()
+        if not ok:
             user = User(Username = username, DisplayName = display)
             db.session.add(user)
             db.session.commit()
@@ -159,7 +162,6 @@ def index():
         if trying:
             flash("This tweet already exists in the database!")                 # Then flash a message about the tweet already existing
             return redirect(url_for("see_all_tweets"))                          ## And redirect to the list of all tweets
-            print("it has gotten here")
 
         if not trying:
             newtweet = Tweet(TweetText=textform, UserId=user.UserId)                ## Create a new tweet object with the text and user id
@@ -167,7 +169,6 @@ def index():
             print("ok this is in the else thing")
             db.session.add(newtweet)                                            ## And add it to the database
             db.session.commit()
-            print("now we have finished commit")
             flash("This tweet has been successfully added.")                    ## Flash a message about a tweet being successfully added
             return redirect(url_for("index"))
 
@@ -199,21 +200,25 @@ def index():
 
 @app.route('/all_tweets')
 def see_all_tweets(): # LIKE THE MOVIES AND MOVIE DIRECTOR THING #####################
-    # tweets = Tweet.query.all()
-    # tweets_users = []
-    # for t in tweets:
-    #     user = User.query.filter_by(id=t.user_id).first()
-    #     movies_directors.append((m, direct))
+    tweets = Tweet.query.all()
+    tweetlist = []
+    for t in tweets:
+        tweet = Tweet.query.filter_by(UserId=t.UserId).first() # HINT #2: You'll have to make a query for the tweet and
+        user = User.query.filter_by(UserId=tweet.UserId).first()
+        tweetlist.append((tweet.TweetText, user.Username))
+    return render_template('all_tweets.html', all_tweets=tweetlist)
 
-    return "You need to write a function here! ! !!"
     # TODO 364: Fill in this view function so that it can successfully render the template all_tweets.html, which is provided.
     # HINT: Careful about what type the templating in all_tweets.html is expecting! It's a list of... not lists, but...
     # HINT #2: You'll have to make a query for the tweet and, based on that, another query for the username that goes with it...
 
 @app.route('/all_users')
 def see_all_users():
-    # users = User.query.all()
-    # much simpler than all tweets
+    # bigusers = User.query.all()
+    # users = []
+    # for x in bigusers:
+    #     user = User.query.filter_by(id=t.UserId).first()
+    # # much simpler than all tweets
     pass # Replace with code
     # TODO 364: Fill in this view function so it can successfully render the template all_users.html, which is provided.
 
