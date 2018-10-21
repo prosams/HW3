@@ -2,6 +2,8 @@
 ## HW 3
 
 # one of the sources I consulted was http://flask.pocoo.org/snippets/64/
+# https://stackoverflow.com/questions/50327174/custom-validators-in-wtforms-using-flask
+# https://wtforms.readthedocs.io/en/stable/validators.html#custom-validators
 
 ####################
 ## Import statements
@@ -77,25 +79,19 @@ class User(db.Model):
 class MyForm(FlaskForm):
     text = StringField('Tweet text!', validators=[Required(), Length(min=0,  max=280)])   ## -- text: tweet text (Required, should not be more than 280 characters)
     username = StringField('Twitter username of who should post', validators=[Required(), Length(min=0,  max=64)])  ## -- username: the twitter username who should post it (Required, should not be more than 64 characters)
-    display_name = StringField('Display name of the user', )    ## -- display_name: the display name of the twitter user with that username (Required, + set up custom validation for this -- see below)
+    display_name = StringField('Display name of the user', validators=[Required()] )    ## -- display_name: the display name of the twitter user with that username (Required, + set up custom validation for this -- see below)
     submit = SubmitField('Submit')
 
-    def customValidate1(self): # TODO 364: Set up custom validation for this form
-        username = self.username.data
+    def validate_username(self, field): # TODO 364: Set up custom validation for this form
+        username = field.data
         if username[0] == "@": # the twitter username may NOT start with an "@" symbol (the template will put that in where it should appear)
-            raise ValidationError("Your twitter username can't start with @!!!!")
-        elif username[0] != "@":
-            return True
+            raise ValidationError("Your twitter username cannot start with @.")
 
-    def customValidate2(self): # TODO 364: Set up custom validation for this form
-        displaydat = self.display_name.data
-        print(displaydat)
-        splitcheck = displaydat.split(" ")
-        print(splitcheck)
+    def validate_display_name(form, field): # TODO 364: Set up custom validation for this form
+        displaydata = field.data
+        splitcheck = displaydata.split(" ")
         if len(splitcheck) <  2: #the display name MUST be at least 2 words (this is a useful technique to practice, even though this is not true of everyone's actual full name!)
-            raise ValidationError("Your  display name must be at least  2 words! ! !!  ")
-        elif len(splitcheck) >= 2:
-            return True
+            raise ValidationError("Your display name must be at least two words.")
 
 # HINT: Check out index.html where the form will be rendered to decide what field names to use in the form class definition
 # TODO 364: Make sure to check out the sample application linked in the readme to check if yours is like it!
@@ -108,7 +104,6 @@ class MyForm(FlaskForm):
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404
-
 
 @app.errorhandler(500)
 def internal_server_error(e):
@@ -158,8 +153,6 @@ def index():
 
         if not trying:
             newtweet = Tweet(TweetText=textform, UserId=user.UserId)                ## Create a new tweet object with the text and user id
-            print(newtweet)
-            print("ok this is in the else thing")
             db.session.add(newtweet)                                            ## And add it to the database
             db.session.commit()
             flash("This tweet has been successfully added.")                    ## Flash a message about a tweet being successfully added
@@ -186,23 +179,23 @@ def see_all_tweets(): # LIKE THE MOVIES AND MOVIE DIRECTOR THING ###############
     # HINT #2: You'll have to make a query for the tweet and, based on that, another query for the username that goes with it...
 
 @app.route('/all_users')
-def see_all_users():
+def see_all_users():     # TODO 364: Fill in this view function so it can successfully
     bigusers = User.query.all()
     print(bigusers)
-    return render_template('all_users.html', users=bigusers)
-
-    # TODO 364: Fill in this view function so it can successfully
-    # render the template all_users.html, which is provided.
+    return render_template('all_users.html', users=bigusers)    # render the template all_users.html, which is provided.
 
 # TODO 364: Create another route (no scaffolding provided) at /longest_tweet with a view function get_longest_tweet (see details below for what it should do)
 # NOTE:This view function should compute and render a template (as shown in the sample application) that shows the text of the tweet currently saved in the database which has the most NON-WHITESPACE characters in it, and the username AND display name of the user that it belongs to.
+
 @app.route('/longest_tweet')
 def get_longest_tweet():
     pass # Replace with code
+    return render_template('longest_tweet.html')
 # TODO 364: Create a template to accompany it called longest_tweet.html that extends from base.html.
 
 # NOTE: This is different (or could be different) from the tweet with the most characters including whitespace!
-# Any ties should be broken alphabetically (alphabetically by text of the tweet). HINT: Check out the chapter in the Python reference textbook on stable sorting.
+# Any ties should be broken alphabetically (alphabetically by text of the tweet).
+# HINT: Check out the chapter in the Python reference textbook on stable sorting.
 # Check out /longest_tweet in the sample application for an example.
 # could pull all tweets and length tweet....
 # could look at other query filters... there are some sorting methods
