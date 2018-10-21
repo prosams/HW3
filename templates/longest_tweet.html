@@ -1,14 +1,6 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<ul>
-{% for nm in users %}
-  <li>{{ nm.username }} -- <i>{{ nm.display_name }}</i></li><br>
-{% endfor %}
-</ul>
-
-{% if not users %}
-    There are no users to show.
-{% endif %}
-
+The tweet text with the most non-whitespace characters is:<br>
+<i>{{ finaltup[0] }}</i>, posted by <strong>@{{ finaltup[1] }}</strong> ({{ finaltup[2] }})<br>
 {% endblock %}

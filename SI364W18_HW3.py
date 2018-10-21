@@ -189,8 +189,17 @@ def see_all_users():     # TODO 364: Fill in this view function so it can succes
 
 @app.route('/longest_tweet')
 def get_longest_tweet():
-    pass # Replace with code
-    return render_template('longest_tweet.html')
+    tweets = Tweet.query.all()
+    biglist = []
+    for t in tweets:
+        tweet = Tweet.query.filter_by(UserId=t.UserId).first()
+        user = User.query.filter_by(UserId=tweet.UserId).first()
+        split = tweet.TweetText.split(" ")
+        length = len(split)
+        biglist.append((tweet.TweetText, user.username, user.display_name, length))
+    sortbylast = sorted(biglist, key=lambda tup: tup[-1], reverse = True)
+    biggesttweettup = sortbylast[0]
+    return render_template('longest_tweet.html', finaltup = biggesttweettup)
 # TODO 364: Create a template to accompany it called longest_tweet.html that extends from base.html.
 
 # NOTE: This is different (or could be different) from the tweet with the most characters including whitespace!
@@ -200,12 +209,6 @@ def get_longest_tweet():
 # could pull all tweets and length tweet....
 # could look at other query filters... there are some sorting methods
 # could sort by text length itself! — LOOK AT LECTURE 5! import func and filter by a lentgth/sort
-
-# HINT 2: The chapters in the Python reference textbook on:
-## - Dictionary accumulation, the max value pattern
-## - Sorting
-# may be useful for this problem!
-
 
 if __name__ == '__main__':
     db.create_all() # Will create any defined models when you run the application
